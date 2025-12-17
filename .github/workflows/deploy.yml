@@ -126,7 +126,7 @@ jobs:
           
           MISSING_VARS=()
           for var in "${REQUIRED_VARS[@]}"; do
-            if ! grep -q "^${var}=" src/.env || grep -q "^${var}=$" src/.env || grep -q "^${var}=\${{" src/.env; then
+            if ! grep -q "^${var}=" src/.env || grep -q "^${var}=$" src/.env || grep -q "^${var}=\$" src/.env; then
               MISSING_VARS+=("$var")
             fi
           done

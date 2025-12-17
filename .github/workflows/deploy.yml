@@ -24,12 +24,16 @@ jobs:
           
           echo "📦 Copiando código al directorio de deployment..."
           # Copiar todo el código desde el workspace del runner al directorio de deployment
+          # Excluir staticfiles y logs ya que se generan automáticamente y tienen permisos especiales
           rsync -av --delete \
             --exclude='.git' \
             --exclude='node_modules' \
             --exclude='__pycache__' \
             --exclude='*.pyc' \
             --exclude='.env' \
+            --exclude='src/staticfiles/' \
+            --exclude='src/logs/' \
+            --exclude='src/media/' \
             "$GITHUB_WORKSPACE/" "$APP_DIR/"
           
           echo "APP_DIR=$APP_DIR" >> $GITHUB_ENV
@@ -165,6 +169,13 @@ jobs:
         run: |
           cd "$APP_DIR"
           echo "📦 Recopilando archivos estáticos..."
+          
+          # Asegurar que los directorios existen con permisos correctos
+          sudo mkdir -p "$APP_DIR/src/staticfiles"
+          sudo mkdir -p "$APP_DIR/src/logs"
+          sudo mkdir -p "$APP_DIR/src/media"
+          
+          # Ejecutar collectstatic
           docker compose -f docker-compose.prod.yml exec -T web python manage.py collectstatic --noinput
           
           echo "🔧 Ajustando permisos de archivos estáticos para Nginx..."

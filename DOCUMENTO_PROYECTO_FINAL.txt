@@ -1,0 +1,545 @@
+================================================================================
+                    [NOMBRE DE TU UNIVERSIDAD]
+              [Nombre de tu Facultad o Carrera]
+
+Materia: Desarrollo Web Fullstack 2
+
+Proyecto Final - Opción C: Plataforma de Cursos en Línea (LMS)
+
+Presentado por: [Tu Nombre Completo]
+                [Matrícula / ID]
+
+Profesor: [Nombre del Profesor]
+
+Fecha de entrega: 15 de Diciembre de 2025
+Lugar: Torreón, Coahuila
+
+================================================================================
+
+
+1. INTRODUCCIÓN
+
+El presente proyecto consiste en el desarrollo de una plataforma educativa en línea (Learning Management System - LMS) robusta y escalable. En un entorno donde la educación digital es fundamental, este sistema permite la gestión integral de cursos, lecciones multimedia e inscripciones de estudiantes.
+
+La aplicación fue construida utilizando el framework Django bajo una arquitectura de Vistas Basadas en Clases (CBVs), garantizando un código modular y reutilizable. A diferencia de sistemas básicos, esta plataforma integra almacenamiento en la nube para archivos multimedia y una base de datos relacional robusta (PostgreSQL), simulando un entorno de producción real.
+
+El sistema permite a los instructores crear cursos con contenido multimedia (videos, textos, imágenes y archivos descargables), mientras que los estudiantes pueden inscribirse, seguir su progreso y completar lecciones de manera intuitiva. La plataforma implementa un sistema de seguimiento de progreso similar a plataformas comerciales como Udemy, calculando automáticamente el porcentaje de avance por curso.
+
+
+2. OBJETIVOS DEL PROYECTO
+
+2.1 Objetivo General
+
+Desarrollar una plataforma web Fullstack utilizando Django y PostgreSQL que permita a los instructores crear contenido educativo multimedia y a los estudiantes consumir dicho contenido y rastrear su progreso académico.
+
+2.2 Objetivos Específicos
+
+- Implementar una arquitectura de software basada 100% en Class-Based Views (CBVs) para el manejo eficiente de la lógica de negocio.
+
+- Desarrollar un sistema de gestión de contenido (CMS) que soporte múltiples formatos de lecciones: video, texto, imágenes y archivos descargables.
+
+- Integrar servicios de almacenamiento en la nube (OCI Object Storage / AWS S3) para la gestión escalable de archivos estáticos y multimedia.
+
+- Implementar un sistema de seguimiento de progreso que calcule automáticamente el porcentaje de avance del estudiante por curso.
+
+- Desarrollar una interfaz de usuario moderna y responsiva con funcionalidades interactivas como drag-and-drop para reordenar lecciones.
+
+- Implementar un sistema de autenticación seguro utilizando el sistema de autenticación de Django con login por email.
+
+- Garantizar la seguridad mediante el uso de UUID para identificadores de recursos y validación de permisos granulares.
+
+
+3. STACK TECNOLÓGICO
+
+El proyecto utiliza un conjunto de tecnologías modernas orientadas al desarrollo empresarial con Python:
+
+3.1 Backend
+
+- Django 5.2.8 (Python 3.11): Se utilizó este framework por su seguridad ("batteries included") y su potente ORM que facilita la interacción con bases de datos relacionales.
+
+- Gunicorn 23.0.0: Servidor WSGI de producción para servir la aplicación Django en entornos de producción.
+
+3.2 Base de Datos
+
+- PostgreSQL 16+: Se eligió sobre SQLite para garantizar la integridad de datos, concurrencia y características avanzadas en un entorno de producción. PostgreSQL permite transacciones ACID, índices optimizados y soporte para relaciones complejas.
+
+3.3 Frontend
+
+- Django Templates: Sistema de plantillas de Django con herencia de templates para mantener consistencia en la interfaz.
+
+- HTML5: Estructura semántica y elementos modernos del lenguaje de marcado.
+
+- CSS3: Diseño responsivo personalizado con efectos visuales modernos (glassmorphism, gradientes, animaciones).
+
+- JavaScript Vanilla: Interactividad del lado del cliente sin dependencias externas, incluyendo funcionalidad de drag-and-drop para reordenar lecciones.
+
+3.4 Infraestructura y Contenedores
+
+- Docker: Contenedorización de la aplicación para garantizar consistencia entre entornos de desarrollo y producción.
+
+- Docker Compose: Orquestación de servicios (aplicación web y base de datos) con configuración declarativa.
+
+3.5 Almacenamiento en la Nube
+
+- Oracle Cloud Infrastructure (OCI) Object Storage: Integración mediante django-storages y boto3 para almacenamiento escalable de archivos multimedia. OCI Object Storage es compatible con la API de S3, permitiendo flexibilidad en la elección de proveedores.
+
+- django-storages 1.14.2: Biblioteca que permite usar diferentes backends de almacenamiento (S3, OCI, Azure, etc.) de forma transparente.
+
+- boto3 1.35.0: SDK de Python para interactuar con servicios de AWS y servicios compatibles con S3 API.
+
+3.6 Servidor Web
+
+- Nginx: Proxy reverso para servir archivos estáticos y enrutar peticiones a Gunicorn en producción.
+
+- WhiteNoise 6.7.0: Middleware para servir archivos estáticos directamente desde Django en desarrollo y producción simple.
+
+
+4. METODOLOGÍA DE DESARROLLO
+
+El desarrollo se rigió por el patrón de diseño MVT (Model-View-Template) propio de Django, con un enfoque estricto en la programación orientada a objetos para las vistas. Todas las vistas del proyecto fueron implementadas como Class-Based Views, cumpliendo con el requisito del 100% de uso de CBVs.
+
+4.1 Fase 1: Modelado de Datos (ORM)
+
+Se diseñó un esquema de base de datos relacional optimizado con los siguientes modelos principales:
+
+4.1.1 Modelo Course (Curso)
+
+El modelo Course representa un curso educativo con los siguientes campos clave:
+
+- identifier: Campo UUIDField que genera identificadores únicos no secuenciales, mejorando la seguridad y previniendo la enumeración de recursos.
+
+- instructor: ForeignKey a User, estableciendo una relación muchos-a-uno donde un usuario puede ser instructor de múltiples cursos.
+
+- title: Título del curso (CharField, máximo 200 caracteres).
+
+- description: Descripción detallada del curso (TextField).
+
+- is_listed: BooleanField que controla si el curso acepta nuevas inscripciones (no revoca acceso a usuarios ya inscritos).
+
+- created_at: DateTimeField con auto_now_add para registrar la fecha de creación.
+
+4.1.2 Modelo Lesson (Lección)
+
+El modelo Lesson implementa polimorfismo de contenido, permitiendo manejar dinámicamente cuatro tipos de contenido en una sola estructura:
+
+- course: ForeignKey a Course, relacionando la lección con su curso padre.
+
+- title: Título de la lección.
+
+- content_type: CharField con choices que define el tipo: "video", "text", "image" o "file".
+
+- text_content: TextField opcional para contenido de texto.
+
+- video_url: URLField opcional para videos embebidos (YouTube, Vimeo).
+
+- attachment: FileField opcional que utiliza el storage configurado (local o cloud) para almacenar archivos multimedia.
+
+- order: PositiveIntegerField que define el orden de la lección dentro del curso, con constraint único por curso para evitar duplicados.
+
+El modelo incluye métodos auxiliares como get_video_embed_url() para convertir URLs de YouTube a formato embed, y is_video_file() para verificar el tipo de archivo adjunto.
+
+4.1.3 Modelo Enrollment (Inscripción)
+
+Modelo intermedio que implementa la relación muchos-a-muchos entre Usuarios y Cursos:
+
+- user: ForeignKey a User.
+
+- course: ForeignKey a Course.
+
+- enrolled_at: DateTimeField con auto_now_add para registrar la fecha de inscripción.
+
+- Constraint único: (user, course) previene inscripciones duplicadas.
+
+4.1.4 Modelo LessonProgress (Progreso de Lección)
+
+Sistema de seguimiento tipo Udemy que rastrea el progreso individual de cada estudiante:
+
+- user: ForeignKey a User.
+
+- lesson: ForeignKey a Lesson.
+
+- completed: BooleanField que indica si la lección fue completada.
+
+- completed_at: DateTimeField nullable que registra cuándo se completó.
+
+- last_position_seconds: PositiveIntegerField para almacenar la última posición vista en videos (preparado para futuras mejoras).
+
+- Constraint único: (user, lesson) garantiza un solo registro de progreso por estudiante y lección.
+
+4.1.5 Modelos Adicionales
+
+- Comment: Sistema de comentarios donde estudiantes inscritos pueden dejar comentarios en cursos.
+
+- CourseRating: Sistema de calificaciones de 1 a 5 estrellas (modelo implementado, funcionalidad de UI pendiente).
+
+4.1.6 Diagrama de Entidad-Relación (Texto)
+
+Relaciones principales:
+
+User (1) ──< (N) Enrollment (N) >── (1) Course
+User (1) ──< (N) Course (como instructor)
+Course (1) ──< (N) Lesson
+User (1) ──< (N) LessonProgress (N) >── (1) Lesson
+Course (1) ──< (N) Comment
+User (1) ──< (N) Comment
+
+4.2 Fase 2: Lógica de Negocio (Vistas y Mixins)
+
+Se cumplió el requisito de utilizar 100% Class-Based Views, implementando las siguientes vistas genéricas y personalizadas:
+
+4.2.1 Mixins de Seguridad Personalizados
+
+CourseInstructorMixin: Mixin que extiende UserPassesTestMixin para verificar que el usuario sea el instructor del curso o un staff member. Se utiliza en todas las vistas que requieren permisos de edición de curso.
+
+Ejemplo de implementación:
+
+class CourseInstructorMixin(UserPassesTestMixin):
+    def test_func(self):
+        user = self.request.user
+        if not user.is_authenticated:
+            return False
+        if user.is_staff:
+            return True
+        course = self.get_course()
+        return course.instructor_id == user.id
+
+StaffRequiredMixin: Mixin para restringir acceso solo a usuarios con permisos de staff.
+
+4.2.2 Vistas Genéricas Implementadas
+
+ListView: CourseListView para el catálogo de cursos con búsqueda y paginación.
+
+DetailView: CourseDetailView y LessonDetailView para mostrar detalles de cursos y lecciones respectivamente.
+
+CreateView: CourseCreateView, LessonCreateView, EnrollmentCreateView, CommentCreateView para crear nuevos recursos.
+
+UpdateView: CourseUpdateView y LessonUpdateView para editar cursos y lecciones.
+
+DeleteView: CourseDeleteView, LessonDeleteView, EnrollmentDeleteView para eliminar recursos.
+
+TemplateView: LearnerDashboardView para el dashboard personalizado de estudiantes.
+
+View (Base): LessonProgressUpdateView y LessonReorderView para lógica personalizada de progreso y reordenamiento.
+
+4.2.3 Lógica de Progreso
+
+El sistema calcula automáticamente el porcentaje de progreso mediante algoritmos en el backend:
+
+1. Se obtienen todas las lecciones de un curso.
+2. Se consultan los registros de LessonProgress del usuario para ese curso.
+3. Se cuenta el número de lecciones completadas (completed=True).
+4. Se calcula: (lecciones_completadas / total_lecciones) * 100
+
+Esta lógica se implementa en CourseDetailView.get_context_data() y LearnerDashboardView.get_context_data().
+
+4.2.4 Sistema de Reordenamiento de Lecciones
+
+Se implementó una vista AJAX (LessonReorderView) que permite reordenar lecciones mediante drag-and-drop sin recargar la página. La lógica utiliza transacciones atómicas de base de datos para evitar conflictos de constraint único:
+
+1. Se reciben los nuevos órdenes mediante JSON en el request.
+2. Se asigna un valor temporal alto (100000 + lesson.id) a cada lección para evitar conflictos.
+3. Se actualizan los valores finales en una transacción atómica.
+4. Se retorna una respuesta JSON de éxito o error.
+
+Esta implementación resuelve el problema de UniqueViolation que ocurría al intentar intercambiar órdenes directamente.
+
+4.3 Fase 3: Frontend e Interactividad
+
+4.3.1 Interfaz de Usuario
+
+Diseño moderno utilizando CSS personalizado con efectos visuales:
+
+- Glassmorphism: Efectos de vidrio esmerilado en tarjetas y elementos flotantes.
+- Gradientes: Fondos con gradientes modernos para mejorar la estética.
+- Responsive Design: Diseño adaptativo que funciona en dispositivos móviles, tablets y desktop.
+- Animaciones: Transiciones suaves en hover y estados de elementos.
+
+4.3.2 Experiencia de Instructor
+
+Funcionalidad Drag-and-Drop: Implementación con JavaScript Vanilla que permite a los instructores reordenar lecciones arrastrándolas visualmente. La actualización se realiza mediante AJAX sin recargar la página, mejorando la experiencia de usuario.
+
+Campos Dinámicos: JavaScript que muestra/oculta campos del formulario según el tipo de contenido seleccionado (texto, video, imagen, archivo).
+
+4.3.3 Reproductor Multimedia
+
+- Videos Subidos: Reproductor HTML5 nativo con controles completos (play, pause, volumen, pantalla completa).
+- Videos Embebidos: Soporte para YouTube y Vimeo mediante conversión automática de URLs a formato embed.
+- Imágenes: Visualización optimizada con opción de descarga y vista en tamaño completo.
+- Archivos: Sistema de descarga directa con información del archivo (nombre, tamaño).
+
+4.3.4 Validación de Formularios
+
+Validación tanto en cliente (JavaScript) como en servidor (Django Forms):
+
+- Validación de tipos de archivo según el content_type seleccionado.
+- Validación de tamaños máximos (100MB para videos, 10MB para imágenes, 50MB para otros archivos).
+- Validación de contenido requerido según el tipo de lección.
+
+
+5. ARQUITECTURA DEL SISTEMA
+
+El sistema se divide en módulos funcionales interconectados:
+
+5.1 Módulo de Cursos (LMS)
+
+- Catálogo público con búsqueda y filtrado por título o descripción.
+- Gestión de visibilidad mediante el campo is_listed para distinguir cursos en borrador vs. publicados.
+- Sistema de inscripción/uninscripción con validación de permisos (instructores no pueden inscribirse en sus propios cursos).
+- Visualización de estadísticas: número de lecciones, estudiantes inscritos, instructor.
+
+5.2 Módulo de Lecciones (Content Delivery)
+
+- Soporte para carga de archivos pesados (hasta 100MB para video) gestionados directamente en la nube mediante django-storages.
+- Sistema de validación de tipos de archivo con mensajes de error claros.
+- Reordenamiento visual mediante drag-and-drop con actualización en tiempo real.
+- Eliminación automática de archivos del storage cuando se actualiza o elimina una lección.
+
+5.3 Módulo de Estudiantes (Dashboard)
+
+- Visualización centralizada de todos los cursos inscritos.
+- Barras de progreso dinámicas que reflejan el avance real calculado en el backend.
+- Acceso rápido a lecciones pendientes y completadas.
+- Información de fecha de completación de lecciones.
+
+5.4 Módulo de Interacción
+
+- Sistema de comentarios anidados por curso, visible solo para estudiantes inscritos.
+- Mecanismo de inscripción y desinscripción con feedback visual mediante mensajes de Django.
+- Sistema de autenticación con login por email (no username) para mejor experiencia de usuario.
+
+
+6. RESULTADOS Y CAPTURAS DE PANTALLA
+
+[NOTA: En esta sección debes insertar las capturas de pantalla correspondientes en Word]
+
+6.1 Catálogo de Cursos
+
+[PEGAR IMAGEN AQUÍ]
+
+Descripción: Vista principal con listado de cursos disponibles, barra de búsqueda funcional, y estadísticas del catálogo. Muestra información de cada curso: título, descripción, instructor, número de lecciones y estudiantes inscritos.
+
+6.2 Detalle del Curso y Lecciones
+
+[PEGAR IMAGEN AQUÍ]
+
+Descripción: Interfaz del curso mostrando el temario completo con todas las lecciones, indicadores de progreso (completadas/pendientes), y el reproductor de video integrado. En modo instructor, se muestran controles para editar y eliminar lecciones.
+
+6.3 Dashboard del Estudiante
+
+[PEGAR IMAGEN AQUÍ]
+
+Descripción: Panel personal del alumno con todos sus cursos inscritos, barras de progreso visuales que muestran el porcentaje de avance, número de lecciones completadas vs. total, y acceso rápido a cada curso.
+
+6.4 Panel de Instructor (Edición y Reordenamiento)
+
+[PEGAR IMAGEN AQUÍ]
+
+Descripción: Herramienta de gestión que permite reordenar lecciones arrastrando y soltando (Drag-and-Drop). Muestra la lista de lecciones con iconos de arrastre, botones de edición y eliminación, y el mensaje indicando el modo instructor activo.
+
+6.5 Formulario de Creación de Lección
+
+[PEGAR IMAGEN AQUÍ]
+
+Descripción: Formulario dinámico que muestra/oculta campos según el tipo de contenido seleccionado. Incluye validación visual de archivos, información de tamaños máximos permitidos, y preview del archivo actual si se está editando.
+
+
+7. DESPLIEGUE E INFRAESTRUCTURA
+
+El proyecto fue preparado para un despliegue profesional utilizando tecnologías de contenedorización:
+
+7.1 Docker y Contenedorización
+
+Dockerfile: Se creó un Dockerfile basado en Python 3.11 Slim para minimizar el tamaño de la imagen. El Dockerfile:
+
+1. Establece el directorio de trabajo.
+2. Copia requirements.txt e instala dependencias.
+3. Copia el código de la aplicación.
+4. Expone el puerto 8000.
+5. Define Gunicorn como comando por defecto.
+
+docker-compose.yml: Archivo de orquestación que gestiona:
+
+- Servicio web: Contenedor Django con Gunicorn, configurado para ejecutar migraciones y collectstatic automáticamente al iniciar.
+- Servicio db: Contenedor PostgreSQL 16 con healthcheck para asegurar que la base de datos esté lista antes de iniciar la aplicación.
+- Volúmenes: Persistencia de datos de PostgreSQL y montaje del código para desarrollo.
+- Variables de entorno: Configuración mediante archivo .env para credenciales sensibles.
+
+7.2 Gestión de Configuración
+
+Uso estricto de variables de entorno (.env) para manejar credenciales sensibles, siguiendo la metodología "The Twelve-Factor App":
+
+- SECRET_KEY: Clave secreta de Django (nunca en código).
+- Credenciales de PostgreSQL: Usuario, contraseña, nombre de base de datos.
+- Credenciales de Cloud Storage: Access Key ID, Secret Access Key, nombre de bucket, endpoint URL.
+- Configuración de Django: DEBUG, ALLOWED_HOSTS, CSRF_TRUSTED_ORIGINS.
+
+7.3 Cloud Storage
+
+En producción, los archivos estáticos y media no se guardan en el servidor, sino que se envían automáticamente a un Bucket de OCI (Oracle Cloud Infrastructure) Object Storage:
+
+- Escalabilidad: Capacidad ilimitada para almacenar archivos multimedia.
+- Rendimiento: CDN opcional para servir archivos de forma rápida a usuarios globales.
+- Costos: Modelo de pago por uso, ideal para proyectos escolares de corta duración.
+- Integración: Transparente mediante django-storages, el código no necesita cambios para alternar entre almacenamiento local y cloud.
+
+Configuración mediante variables de entorno:
+
+USE_CLOUD_STORAGE=1
+AWS_ACCESS_KEY_ID=tu-access-key-id
+AWS_SECRET_ACCESS_KEY=tu-secret-key
+AWS_STORAGE_BUCKET_NAME=nombre-bucket
+AWS_S3_REGION_NAME=us-ashburn-1
+AWS_S3_ENDPOINT_URL=https://tu-namespace.compat.objectstorage.region.oraclecloud.com
+
+7.4 Servidor Web y Proxy Reverso
+
+En producción, se utiliza Nginx como proxy reverso:
+
+- Sirve archivos estáticos directamente (mejor rendimiento).
+- Enruta peticiones dinámicas a Gunicorn.
+- Maneja SSL/HTTPS con certificados Let's Encrypt.
+- Configuración de seguridad (headers, rate limiting, etc.).
+
+
+8. TESTING Y CALIDAD DE CÓDIGO
+
+8.1 Suite de Pruebas
+
+El proyecto incluye 10 tests unitarios e integración que cubren las funcionalidades principales:
+
+8.1.1 Tests de Búsqueda y Filtrado
+
+test_course_list_search_filters_results: Verifica que la búsqueda de cursos funcione correctamente, filtrando por título o descripción y excluyendo cursos que no coinciden con el término de búsqueda.
+
+8.1.2 Tests de Inscripciones
+
+test_course_detail_marks_enrollment_in_context: Verifica que el contexto de la vista de detalle de curso incluya correctamente el estado de inscripción del usuario.
+
+test_enrollment_create_view_adds_inscription: Verifica que la vista de inscripción cree correctamente un registro de Enrollment en la base de datos.
+
+test_instructor_cannot_enroll_in_own_course: Valida la regla de negocio que previene que un instructor se inscriba en su propio curso.
+
+test_enrollment_delete_view_removes_inscription: Verifica que la desinscripción elimine correctamente el registro de Enrollment.
+
+8.1.3 Tests de Progreso
+
+test_lesson_progress_update_marks_completed: Verifica que el sistema de progreso marque correctamente una lección como completada cuando el usuario lo solicita.
+
+test_dashboard_shows_progress_percentage: Valida que el dashboard calcule correctamente el porcentaje de progreso (en este caso, 50% cuando 1 de 2 lecciones está completada).
+
+8.1.4 Tests de Permisos y Seguridad
+
+test_lesson_creation_requires_instructor: Verifica que solo los instructores puedan crear lecciones (retorna 403 para usuarios no autorizados).
+
+test_lesson_detail_requires_enrollment: Valida que solo estudiantes inscritos puedan ver el contenido de las lecciones.
+
+test_comment_requires_enrollment: Verifica que solo estudiantes inscritos puedan dejar comentarios.
+
+8.1.5 Tests de Validación de Formularios
+
+test_lesson_form_validates_content_requirements: Valida que el formulario de lección rechace datos inválidos (por ejemplo, lección de texto sin contenido).
+
+8.2 Ejecución de Tests
+
+Los tests se ejecutan mediante el comando estándar de Django:
+
+python manage.py test
+
+O con SQLite para desarrollo rápido:
+
+DJANGO_USE_SQLITE=1 python manage.py test
+
+Todos los tests pasan exitosamente, garantizando que las funcionalidades principales del sistema funcionan correctamente.
+
+
+9. DESAFÍOS TÉCNICOS Y SOLUCIONES
+
+Durante el desarrollo, se enfrentaron varios desafíos técnicos que requirieron soluciones creativas:
+
+9.1 Problema: UniqueViolation en Reordenamiento de Lecciones
+
+Desafío: Al implementar el sistema de drag-and-drop para reordenar lecciones, se producía un error de UniqueViolation cuando se intentaba intercambiar el orden de dos lecciones adyacentes. Esto ocurría porque el constraint único (course, order) impedía asignar temporalmente el mismo orden a dos lecciones.
+
+Solución: Se implementó un algoritmo de dos fases dentro de una transacción atómica:
+
+1. Fase 1: Asignar valores temporales altos (100000 + lesson.id) a todas las lecciones a reordenar, garantizando que no haya conflictos.
+
+2. Fase 2: Asignar los valores finales de orden en una segunda pasada.
+
+Esta solución garantiza que nunca haya conflictos de constraint único durante el proceso de reordenamiento.
+
+9.2 Problema: Eliminación de Archivos en Cloud Storage
+
+Desafío: Cuando se actualizaba o eliminaba una lección, los archivos antiguos permanecían en el bucket de OCI Object Storage, generando costos innecesarios y ocupando espacio.
+
+Solución: Se implementó lógica en LessonUpdateView.form_valid() y LessonDeleteView.delete() para eliminar automáticamente los archivos del storage cuando:
+
+- Se sube un nuevo archivo que reemplaza al anterior.
+- Se cambia el tipo de contenido de uno que requiere archivo a uno que no (por ejemplo, de imagen a texto).
+- Se elimina una lección completamente.
+
+La eliminación se maneja con try-except para evitar errores si el archivo ya no existe, registrando warnings en los logs.
+
+9.3 Problema: Validación de Tipos de Archivo
+
+Desafío: Necesidad de validar que los archivos subidos correspondan al tipo de contenido seleccionado (por ejemplo, no permitir subir un PDF cuando se selecciona "Video").
+
+Solución: Se implementó validación tanto en el formulario (LessonForm.clean_attachment()) como en el frontend (JavaScript). La validación verifica:
+
+- Extensión del archivo según el content_type.
+- Tamaño máximo según el tipo (100MB para videos, 10MB para imágenes, 50MB para otros).
+- Mensajes de error claros para el usuario.
+
+9.4 Problema: Cálculo de Progreso en Dashboard
+
+Desafío: Calcular eficientemente el porcentaje de progreso para múltiples cursos en el dashboard sin realizar múltiples consultas a la base de datos.
+
+Solución: Se utilizó prefetch_related() y select_related() para optimizar las consultas, cargando todas las lecciones y progresos necesarios en una sola consulta. El cálculo se realiza en Python después de cargar los datos, evitando N+1 queries.
+
+
+10. CONCLUSIONES
+
+El desarrollo de esta plataforma de cursos consolidó el dominio del framework Django y la arquitectura backend avanzada. Se logró exitosamente la transición de vistas basadas en funciones a Vistas Basadas en Clases (CBVs), resultando en un código más limpio, mantenible y siguiendo las mejores prácticas de Django.
+
+La integración con PostgreSQL y Object Storage demostró la capacidad de construir aplicaciones preparadas para el mundo real, superando las limitaciones de los entornos de desarrollo básicos. El uso de PostgreSQL en lugar de SQLite garantiza la integridad de datos, concurrencia y características avanzadas necesarias en aplicaciones de producción.
+
+Asimismo, la implementación de lógica compleja en el frontend (reordenamiento visual mediante drag-and-drop) y backend (cálculo de progreso, transacciones atómicas) resultó en una experiencia de usuario fluida y profesional. El sistema de drag-and-drop, en particular, demuestra la capacidad de integrar funcionalidades modernas de JavaScript con el backend de Django mediante AJAX.
+
+La arquitectura 100% basada en CBVs no solo cumple con los requisitos del proyecto, sino que también facilita la extensibilidad y mantenimiento del código. Los mixins personalizados (CourseInstructorMixin, StaffRequiredMixin) demuestran el uso avanzado de herencia múltiple en Python para gestionar permisos de forma elegante.
+
+La integración con servicios en la nube (OCI Object Storage) mediante django-storages muestra la capacidad de construir aplicaciones escalables que pueden manejar grandes volúmenes de archivos multimedia sin limitaciones de almacenamiento local. Esta arquitectura es esencial para aplicaciones educativas que pueden crecer significativamente en contenido.
+
+El sistema de testing implementado garantiza la calidad del código y la confiabilidad de las funcionalidades principales. Los 10 tests cubren casos críticos como permisos, validaciones, inscripciones y cálculo de progreso.
+
+En resumen, este proyecto demuestra competencia en:
+
+- Desarrollo Fullstack con Django y PostgreSQL.
+- Arquitectura basada en clases y programación orientada a objetos.
+- Integración con servicios en la nube.
+- Desarrollo de interfaces de usuario modernas y responsivas.
+- Implementación de funcionalidades complejas (drag-and-drop, cálculo de progreso).
+- Buenas prácticas de seguridad (UUID, validación de permisos, variables de entorno).
+- Testing y calidad de código.
+
+El proyecto está listo para ser desplegado en producción y puede servir como base para futuras mejoras como sistema de calificaciones, certificados de finalización, notificaciones por email, y analytics para instructores.
+
+
+11. REFERENCIAS
+
+- Django Software Foundation. (2024). Django Documentation. https://docs.djangoproject.com/
+
+- PostgreSQL Global Development Group. (2024). PostgreSQL Documentation. https://www.postgresql.org/docs/
+
+- Docker Inc. (2024). Docker Documentation. https://docs.docker.com/
+
+- Oracle Corporation. (2024). Oracle Cloud Infrastructure Object Storage Documentation. https://docs.oracle.com/en-us/iaas/Content/Object/Concepts/objectstorageoverview.htm
+
+- jschneier. (2024). django-storages: Django storage backends for cloud storage providers. https://github.com/jschneier/django-storages
+
+- Python Software Foundation. (2024). Python 3.11 Documentation. https://docs.python.org/3.11/
+
+
+================================================================================
+                              FIN DEL DOCUMENTO
+================================================================================
+

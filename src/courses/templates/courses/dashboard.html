@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}Mi progreso{% endblock %}
+
+{% block content %}
+<section class="card floating-card page-section">
+    <div class="hero" style="margin-bottom:0;">
+        <span class="hero-label">Panel personal</span>
+        <h1>Tu progreso</h1>
+        <p>Revisa cómo vas en cada curso y retoma justo donde lo dejaste.</p>
+        <div class="stat-grid" style="margin-top:1.5rem;">
+            <div class="stat-card">
+                <span>{{ dashboard_courses|length }}</span>
+                Cursos inscritos
+            </div>
+            <div class="stat-card">
+                <span>{{ teaching_courses|length }}</span>
+                Cursos como instructor
+            </div>
+            <div class="stat-card">
+                <span>{{ total_completed_lessons }}</span>
+                Lecciones completadas
+            </div>
+        </div>
+    </div>
+</section>
+
+{% if dashboard_courses %}
+    <div class="course-grid">
+        {% for item in dashboard_courses %}
+            <article class="course-card floating-card">
+                <div>
+                    <h2>{{ item.course.title }}</h2>
+                    <p>{{ item.completed_lessons }} / {{ item.total_lessons }} lecciones completadas</p>
+                </div>
+                <div class="progress-bar">
+                    <span style="width: {{ item.progress_percent }}%;"></span>
+                </div>
+                <p class="meta">{{ item.progress_percent }}% completado</p>
+                <a class="button button-primary" href="{{ item.course.get_absolute_url }}">Continuar</a>
+            </article>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="empty-state">Todavía no estás inscrito en ningún curso.</div>
+{% endif %}
+
+{% if teaching_courses %}
+    <section class="card floating-card page-section">
+        <h2>Mis cursos como instructor</h2>
+        <ul class="lesson-list">
+            {% for course in teaching_courses %}
+                <li class="lesson-item" style="background:#fff;">
+                    <div>
+                        <strong>{{ course.title }}</strong><br>
+                        <small>{{ course.lessons.count }} lecciones · {{ course.enrollments.count }} estudiantes</small>
+                    </div>
+                    <div class="lesson-actions">
+                        <a class="button button-primary" href="{{ course.get_absolute_url }}">Ver curso</a>
+                        <a class="button button-secondary" href="{% url 'courses:lesson_create' course.identifier %}">Agregar lección</a>
+                    </div>
+                </li>
+            {% endfor %}
+        </ul>
+    </section>
+{% endif %}
+{% endblock %}

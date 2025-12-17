@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Plataforma de Cursos{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'courses/style.css' %}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <header class="nav-glass">
+        <div class="nav-wrapper">
+            <div class="nav-brand">
+                <a href="{% url 'courses:course_list' %}" class="logo">QuasarForge</a>
+                <span class="tagline">Aprende sin límites</span>
+            </div>
+            <div class="nav-links">
+                <a class="nav-link {% if request.path == '/' or request.path|slice:":9" == '/courses/' %}is-active{% endif %}" href="{% url 'courses:course_list' %}">Cursos</a>
+                {% if user.is_authenticated %}
+                    <a class="nav-link {% if request.path|slice:":18" == '/courses/dashboard' %}is-active{% endif %}" href="{% url 'courses:dashboard' %}">Mi progreso</a>
+                    <a class="nav-link {% if request.path|slice:":17" == '/accounts/profile' %}is-active{% endif %}" href="{% url 'profile' %}">Mi perfil</a>
+                {% endif %}
+                {% if user.is_authenticated %}
+                    <a class="button button-primary button-small" href="{% url 'courses:course_create' %}">➕ Nuevo curso</a>
+                {% endif %}
+            </div>
+            <div class="auth-links">
+                {% if user.is_authenticated %}
+                    <span class="badge">Hola {{ user.first_name|default:user.username }}</span>
+                    <form method="post" action="{% url 'logout' %}" style="margin:0;">
+                        {% csrf_token %}
+                        <button class="button button-secondary button-small" type="submit">Salir</button>
+                    </form>
+                {% else %}
+                    <a class="nav-link" href="{% url 'login' %}">Ingresar</a>
+                    <a class="button button-primary button-small" href="{% url 'signup' %}">Crear cuenta</a>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        {% if messages %}
+            <ul class="messages">
+                {% for message in messages %}
+                    <li class="{{ message.tags }}">{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer style="text-align:center;margin-bottom:2rem;color:#94a3b8;">
+        Plataforma de Cursos • Fullstack 2
+    </footer>
+</body>
+</html>

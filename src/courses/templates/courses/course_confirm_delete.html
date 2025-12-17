@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}Eliminar curso{% endblock %}
+
+{% block content %}
+<section class="card floating-card">
+    <h1>Eliminar curso</h1>
+    <p>Esta acción eliminará el curso "{{ object.title }}" y todas las lecciones asociadas.</p>
+    <form method="post" class="form-actions">
+        {% csrf_token %}
+        <button class="button button-primary" type="submit">Confirmar eliminación</button>
+        <a class="button button-secondary" href="{{ object.get_absolute_url }}">Cancelar</a>
+    </form>
+</section>
+{% endblock %}

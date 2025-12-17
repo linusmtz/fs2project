@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}Ingresar{% endblock %}
+
+{% block content %}
+<div class="login-grid">
+    <section class="login-illustration">
+        <div class="illustration-icon">📚</div>
+        <h2>Bienvenido de vuelta</h2>
+        <p>Gestiona tus cursos, monitorea el progreso de tus estudiantes y comparte nuevos conocimientos.</p>
+        <ul>
+            <li>✨ Estadísticas de avance en tiempo real</li>
+            <li>🎥 Materiales multimedia centralizados</li>
+            <li>💬 Comentarios y feedback instantáneo</li>
+            <li>📊 Dashboard personalizado</li>
+        </ul>
+    </section>
+    <section class="card login-card">
+        <div class="form-header">
+            <h1>Iniciar sesión</h1>
+            <p class="meta">Ingresa con tu correo electrónico</p>
+        </div>
+        <form method="post" class="auth-form">
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+                <div class="form-errors">
+                    {% for error in form.non_field_errors %}
+                        <div class="error-message">{{ error }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            <div class="form-group">
+                <label for="{{ form.username.id_for_label }}">Correo electrónico</label>
+                {{ form.username }}
+                {% if form.username.errors %}
+                    <div class="field-errors">{{ form.username.errors }}</div>
+                {% endif %}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.password.id_for_label }}">Contraseña</label>
+                {{ form.password }}
+                {% if form.password.errors %}
+                    <div class="field-errors">{{ form.password.errors }}</div>
+                {% endif %}
+            </div>
+            <button class="button button-primary button-full" type="submit">
+                <span>Entrar</span>
+                <span>→</span>
+            </button>
+        </form>
+        <div class="auth-links-footer">
+            <a href="{% url 'password_reset' %}" class="link-text">¿Olvidaste tu contraseña?</a>
+            <span class="separator">·</span>
+            <a href="{% url 'signup' %}" class="link-text">Crear una cuenta</a>
+        </div>
+    </section>
+</div>
+{% endblock %}

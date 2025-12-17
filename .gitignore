@@ -1,0 +1,250 @@
+# ============================================
+# Django
+# ============================================
+*.log
+*.pot
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# ============================================
+# Django - Base de datos
+# ============================================
+*.sqlite3
+*.sqlite3-journal
+*.db
+
+# ============================================
+# Django - Archivos estáticos y media
+# ============================================
+/staticfiles/
+/media/
+/static/
+*.static
+
+# ============================================
+# Django - Archivos de entorno
+# ============================================
+.env
+.env.local
+.env.*.local
+*.env
+src/.env
+.env.backup*
+ENV_CORREGIDO.txt
+
+# ============================================
+# Django - Logs
+# ============================================
+logs/
+*.log
+src/logs/
+*.log.*
+
+# ============================================
+# Python Virtual Environment
+# ============================================
+venv/
+ENV/
+env/
+.venv
+.virtualenv
+pip-log.txt
+pip-delete-this-directory.txt
+
+# ============================================
+# IDEs y Editores
+# ============================================
+# VS Code
+.vscode/
+*.code-workspace
+
+# PyCharm
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# ============================================
+# Sistema Operativo
+# ============================================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# ============================================
+# Docker
+# ============================================
+# No ignorar Dockerfile, docker-compose.yml, etc.
+# Pero sí ignorar volúmenes y datos de contenedores
+docker-compose.override.yml
+.dockerignore
+
+# ============================================
+# Archivos temporales y de backup
+# ============================================
+*.bak
+*.backup
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+.cache/
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.hypothesis/
+
+# ============================================
+# Archivos de configuración local
+# ============================================
+local_settings.py
+settings_local.py
+*.local.py
+
+# ============================================
+# Archivos de migraciones (OPCIONAL - descomentar si no quieres versionar migraciones)
+# ============================================
+# migrations/
+# !migrations/__init__.py
+
+# ============================================
+# Archivos de documentación generados
+# ============================================
+docs/_build/
+site/
+
+# ============================================
+# Archivos de testing
+# ============================================
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.hypothesis/
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# ============================================
+# Archivos de Jupyter Notebook
+# ============================================
+.ipynb_checkpoints
+*.ipynb
+
+# ============================================
+# Archivos de Node.js (si usas algún frontend)
+# ============================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# ============================================
+# Archivos de secrets y credenciales
+# ============================================
+secrets/
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+credentials.json
+service-account.json
+
+# ============================================
+# Archivos específicos del proyecto
+# ============================================
+# Backup de .env
+.env.backup*
+ENV_CORREGIDO.txt
+
+# Archivos de verificación (opcional - puedes versionarlos si quieres)
+# VERIFICACION_COMPLETA.md
+# VALIDACIONES_Y_FUNCIONALIDADES.md
+
+# ============================================
+# Archivos de deployment (mantener en repo, pero ignorar configuraciones locales)
+# ============================================
+# Mantener: deploy.sh, setup-nginx.sh, docker-compose.yml, Dockerfile
+# Ignorar: configuraciones locales de deployment

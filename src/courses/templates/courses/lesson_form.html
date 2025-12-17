@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}{{ view.object|default_if_none:"Nueva lección" }}{% endblock %}
+
+{% block content %}
+<section class="card floating-card">
+    <div class="form-header">
+        <h1>{% if view.object %}✏️ Editar{% else %}➕ Nueva{% endif %} lección</h1>
+        <p class="meta">{% if view.object %}Modifica el contenido de la lección{% else %}Agrega nuevo contenido a tu curso{% endif %}</p>
+        {% if view.object %}
+            <p class="meta"><a href="{{ view.object.course.get_absolute_url }}">← Volver a {{ view.object.course.title }}</a></p>
+        {% else %}
+            <p class="meta"><a href="{{ course.get_absolute_url }}">← Volver al curso</a></p>
+        {% endif %}
+    </div>
+    <form method="post" enctype="multipart/form-data" class="auth-form">
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+            <div class="form-errors">
+                {% for error in form.non_field_errors %}
+                    <div class="error-message">{{ error }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        <div class="form-group">
+            <label for="{{ form.title.id_for_label }}">{{ form.title.label }}</label>
+            {{ form.title }}
+            {% if form.title.errors %}
+                <div class="field-errors">{{ form.title.errors }}</div>
+            {% endif %}
+        </div>
+        <div class="form-group">
+            <label for="{{ form.content_type.id_for_label }}">{{ form.content_type.label }}</label>
+            {{ form.content_type }}
+            {% if form.content_type.errors %}
+                <div class="field-errors">{{ form.content_type.errors }}</div>
+            {% endif %}
+        </div>
+        {{ form.order }} {# Campo oculto, se calcula automáticamente #}
+        <div class="form-group" id="text-content-group">
+            <label for="{{ form.text_content.id_for_label }}">{{ form.text_content.label }}</label>
+            {{ form.text_content }}
+            {% if form.text_content.errors %}
+                <div class="field-errors">{{ form.text_content.errors }}</div>
+            {% endif %}
+        </div>
+        <div class="form-group" id="video-url-group">
+            <label for="{{ form.video_url.id_for_label }}">{{ form.video_url.label }}</label>
+            {{ form.video_url }}
+            {% if form.video_url.errors %}
+                <div class="field-errors">{{ form.video_url.errors }}</div>
+            {% endif %}
+            <small class="help-text">
+                <strong>Opción 1:</strong> Pega la URL del video (YouTube, Vimeo, etc.)<br>
+                <strong>Opción 2:</strong> O sube un archivo de video más abajo (MP4, WebM, MOV - máx. 100MB)
+            </small>
+        </div>
+        <div class="form-group" id="attachment-group">
+            <label for="{{ form.attachment.id_for_label }}">{{ form.attachment.label }}</label>
+            <div class="file-upload-wrapper">
+                {{ form.attachment }}
+                <label for="{{ form.attachment.id_for_label }}" class="file-upload-label">
+                    <span class="file-upload-icon">📎</span>
+                    <span class="file-upload-text">Seleccionar archivo</span>
+                </label>
+                <div class="file-name-display" id="file-name-display"></div>
+            </div>
+            {% if form.attachment.errors %}
+                <div class="field-errors">{{ form.attachment.errors }}</div>
+            {% endif %}
+            <small class="help-text" id="attachment-help">
+                <span id="video-help" style="display:none;">Formatos permitidos: MP4, WebM, MOV, AVI, MKV (máx. 100MB)</span>
+                <span id="image-help" style="display:none;">Formatos permitidos: JPG, PNG, GIF, WEBP, SVG (máx. 10MB)</span>
+                <span id="file-help" style="display:none;">Formatos permitidos: PDF, DOC, DOCX, ZIP, TXT, XLSX, PPTX (máx. 50MB)</span>
+            </small>
+            {% if view.object and view.object.attachment %}
+                <div class="current-file">
+                    <strong>📎 Archivo actual:</strong> 
+                    <a href="{{ view.object.attachment.url }}" target="_blank">{{ view.object.get_file_name }}</a>
+                    <small>({{ view.object.attachment.size|filesizeformat }})</small>
+                    <br>
+                    <small style="color: var(--color-muted); margin-top: 0.5rem; display: block;">
+                        💡 Al subir un nuevo archivo, el archivo actual se eliminará automáticamente
+                    </small>
+                </div>
+            {% endif %}
+        </div>
+        <div class="form-actions">
+            <button class="button button-primary" type="submit">
+                {% if view.object %}💾 Guardar cambios{% else %}✨ Crear lección{% endif %}
+            </button>
+            <a class="button button-secondary" href="{% if view.object %}{{ view.object.course.get_absolute_url }}{% else %}{{ course.get_absolute_url }}{% endif %}">Cancelar</a>
+        </div>
+        {% if not view.object %}
+            <p class="meta" style="text-align: center; margin-top: 1rem; color: var(--color-muted);">
+                💡 Puedes agregar más lecciones después desde la página del curso
+            </p>
+        {% endif %}
+    </form>
+</section>
+
+<script>
+// Mostrar/ocultar campos según el tipo de contenido
+document.addEventListener('DOMContentLoaded', function() {
+    const contentType = document.getElementById('{{ form.content_type.id_for_label }}');
+    const textGroup = document.getElementById('text-content-group');
+    const videoGroup = document.getElementById('video-url-group');
+    const attachmentGroup = document.getElementById('attachment-group');
+    
+    function toggleFields() {
+        const value = contentType.value;
+        textGroup.style.display = value === 'text' ? 'block' : 'none';
+        videoGroup.style.display = value === 'video' ? 'block' : 'none';
+        // Para video, también mostrar el campo de attachment (puede subir video o usar URL)
+        attachmentGroup.style.display = (value === 'file' || value === 'image' || value === 'video') ? 'block' : 'none';
+        
+        // Actualizar ayuda según el tipo
+        const videoHelp = document.getElementById('video-help');
+        const imageHelp = document.getElementById('image-help');
+        const fileHelp = document.getElementById('file-help');
+        
+        videoHelp.style.display = 'none';
+        imageHelp.style.display = 'none';
+        fileHelp.style.display = 'none';
+        
+        if (value === 'video') {
+            videoHelp.style.display = 'inline';
+        } else if (value === 'image') {
+            imageHelp.style.display = 'inline';
+        } else if (value === 'file') {
+            fileHelp.style.display = 'inline';
+        }
+    }
+    
+    contentType.addEventListener('change', toggleFields);
+    toggleFields();
+    
+    // Mostrar nombre del archivo seleccionado
+    const fileInput = document.getElementById('{{ form.attachment.id_for_label }}');
+    const fileNameDisplay = document.getElementById('file-name-display');
+    if (fileInput) {
+        fileInput.addEventListener('change', function(e) {
+            if (e.target.files.length > 0) {
+                fileNameDisplay.textContent = '📄 ' + e.target.files[0].name;
+                fileNameDisplay.style.display = 'block';
+            } else {
+                fileNameDisplay.style.display = 'none';
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,56 @@
+services:
+  web:
+    build: .
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py collectstatic --noinput &&
+             gunicorn app.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120"
+    volumes:
+      - .:/code
+      - static_volume:/code/src/staticfiles
+      - media_volume:/code/src/media
+    ports:
+      - "127.0.0.1:8000:8000"  # Solo localhost, Nginx se conecta aquí
+    env_file:
+      - src/.env
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - app_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  db:
+    image: postgres:16
+    env_file:
+      - src/.env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-fs2_courses}
+      POSTGRES_USER: ${POSTGRES_USER:-fs2_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fs2_password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-fs2_user} -d ${POSTGRES_DB:-fs2_courses}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - app_network
+
+volumes:
+  postgres_data:
+  static_volume:
+  media_volume:
+
+networks:
+  app_network:
+    driver: bridge
+

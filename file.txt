@@ -1,0 +1,79 @@
+CONTEXTO GENERAL DEL SERVIDOR (NO ASUMIR, ESTO YA ESTÁ HECHO):
+
+- Servidor en Oracle Cloud (Ubuntu 22.04)
+- Dominio: linusmartinez.com (gestionado en Cloudflare)
+- Subdominio: app.linusmartinez.com
+- DNS PROPIO configurado con BIND9
+- Nameserver propio: ns1.linusmartinez.com
+- El DNS YA FUNCIONA correctamente (NO TOCAR DNS, NO TOCAR BIND)
+
+PRUEBAS CONFIRMADAS:
+- dig @ns1.linusmartinez.com app.linusmartinez.com → NOERROR
+- app.linusmartinez.com resuelve a 129.80.212.133
+- Propagación DNS completada
+- NO hay problema de firewall ni Oracle Cloud
+
+ESTADO ACTUAL DE NGINX:
+- Nginx YA está instalado y funcionando
+- El sitio app.linusmartinez.com YA responde por HTTP
+- Ruta actual del sitio:
+  /var/www/app.linusmartinez.com
+- Archivo actual:
+  /var/www/app.linusmartinez.com/index.html
+- Configuración Nginx existente:
+  /etc/nginx/sites-available/app.linusmartinez.com
+- El sitio YA está habilitado en sites-enabled
+- NO hay HTTPS, SOLO HTTP (esto es intencional)
+- NO se debe configurar SSL/Certbot por ahora
+
+OBJETIVO A PARTIR DE AQUÍ:
+- Montar una aplicación Django COMPLETA
+- Usar Gunicorn como servidor WSGI
+- Usar Nginx como reverse proxy
+- Django NO debe exponerse directamente a Internet
+- Gunicorn debe correr solo en localhost (127.0.0.1)
+- Nginx debe escuchar en el puerto 80 y reenviar a Gunicorn
+
+RESTRICCIONES IMPORTANTES (NO ROMPER):
+- NO modificar DNS
+- NO modificar BIND
+- NO cambiar Cloudflare
+- NO cambiar el subdominio
+- NO tocar reglas de Oracle Cloud
+- NO eliminar la configuración base de Nginx
+- NO usar HTTPS todavía
+- NO usar docker
+
+LO QUE SÍ SE PUEDE HACER:
+- Crear un proyecto Django nuevo
+- Usar virtualenv
+- Instalar dependencias con pip
+- Configurar Gunicorn
+- Ajustar settings.py (ALLOWED_HOSTS, STATIC_ROOT, etc.)
+- Cambiar Nginx para que actúe como reverse proxy
+- Servir Django en app.linusmartinez.com
+
+ARQUITECTURA FINAL ESPERADA:
+
+Internet
+  |
+  |  HTTP :80
+  v
+Nginx (reverse proxy)
+  |
+  |  localhost
+  v
+Gunicorn (puerto interno, ej. 8000)
+  |
+  v
+Django app
+
+CRITERIO DE ÉXITO:
+- http://app.linusmartinez.com carga la app Django
+- No se expone ningún puerto de Django al exterior
+- Nginx sigue funcionando correctamente
+- DNS sigue resolviendo correctamente
+
+INSTRUCCIÓN FINAL PARA CURSOR:
+Asume que toda la infraestructura base ya está correcta.
+Tu tarea es SOLO gestionar Django + Gunicorn + Nginx de forma limpia y profesional, sin romper nada de lo ya existente.

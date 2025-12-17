@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}{{ view.object|default_if_none:"Nuevo curso" }}{% endblock %}
+
+{% block content %}
+<section class="card floating-card">
+    <div class="form-header">
+        <h1>{% if view.object %}✏️ Editar{% else %}➕ Nuevo{% endif %} curso</h1>
+        <p class="meta">{% if view.object %}Modifica la información de tu curso{% else %}Crea un nuevo curso para compartir conocimientos{% endif %}</p>
+    </div>
+    <form method="post" class="auth-form">
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+            <div class="form-errors">
+                {% for error in form.non_field_errors %}
+                    <div class="error-message">{{ error }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        <div class="form-group">
+            <label for="{{ form.title.id_for_label }}">{{ form.title.label }}</label>
+            {{ form.title }}
+            {% if form.title.errors %}
+                <div class="field-errors">{{ form.title.errors }}</div>
+            {% endif %}
+        </div>
+        <div class="form-group">
+            <label for="{{ form.description.id_for_label }}">{{ form.description.label }}</label>
+            {{ form.description }}
+            {% if form.description.errors %}
+                <div class="field-errors">{{ form.description.errors }}</div>
+            {% endif %}
+        </div>
+        <div class="form-group checkbox-group">
+            <label class="checkbox-label">
+                {{ form.is_listed }}
+                <span>{{ form.is_listed.label }}</span>
+            </label>
+            {% if form.is_listed.errors %}
+                <div class="field-errors">{{ form.is_listed.errors }}</div>
+            {% endif %}
+        </div>
+        <div class="form-actions">
+            <button class="button button-primary" type="submit">
+                {% if view.object %}💾 Guardar cambios{% else %}✨ Crear curso{% endif %}
+            </button>
+            <a class="button button-secondary" href="{% if view.object %}{{ view.object.get_absolute_url }}{% else %}{% url 'courses:course_list' %}{% endif %}">Cancelar</a>
+        </div>
+        {% if not view.object %}
+            <p class="meta" style="text-align: center; margin-top: 1rem; color: var(--color-muted);">
+                💡 Después de crear el curso, podrás agregar lecciones desde la página del curso
+            </p>
+        {% endif %}
+    </form>
+</section>
+{% endblock %}

@@ -1,0 +1,323 @@
+{% extends "base.html" %}
+
+{% block title %}{{ course.title }}{% endblock %}
+
+{% block content %}
+<section class="page-section">
+    <div class="course-overview">
+        <div class="card floating-card">
+            <p class="badge">Curso destacado</p>
+            <h1 style="margin-bottom:0.5rem;">{{ course.title }}</h1>
+            <p>{{ course.description }}</p>
+            <div class="stat-grid">
+                <div class="stat-card">
+                    <span>{{ lessons|length }}</span>
+                    Lecciones publicadas
+                </div>
+                <div class="stat-card">
+                    <span>{{ course.enrollment_count }}</span>
+                    Estudiantes
+                </div>
+                <div class="stat-card">
+                    <span>{{ progress_percent }}%</span>
+                    Tu progreso
+                </div>
+            </div>
+            <p class="meta">
+                Instructor: {{ course.instructor.get_full_name|default:course.instructor.username }}
+            </p>
+            {% if not course.is_listed %}
+                <span class="pill" style="background:#fee2e2;color:#b91c1c;">No visible en catálogo</span>
+            {% endif %}
+            <div class="progress-bar">
+                <span style="width: {{ progress_percent }}%;"></span>
+            </div>
+            <p class="meta">Completado: {{ progress_percent }}%</p>
+        </div>
+        <div class="card floating-card">
+            <h3>Acciones rápidas</h3>
+            {% if user.is_authenticated %}
+                {% if can_manage_course %}
+                    <p class="meta">
+                        {% if is_instructor %}
+                            Modo instructor activo
+                        {% else %}
+                            Administrando como staff
+                        {% endif %}
+                    </p>
+                    <div class="form-actions" style="flex-direction:column;align-items:stretch;margin-top:1rem;gap:0.75rem;">
+                        <a class="button button-primary" href="{% url 'courses:lesson_create' course.identifier %}">
+                            ➕ Agregar lección
+                        </a>
+                        <a class="button button-secondary" href="{% url 'courses:course_update' course.identifier %}">
+                            ✏️ Editar curso
+                        </a>
+                        {% if lessons|length == 0 %}
+                            <p class="meta" style="margin-top: 0.5rem; padding: 0.75rem; background: #fef3c7; border-radius: 8px; color: #92400e;">
+                                💡 <strong>Próximo paso:</strong> Agrega tu primera lección para comenzar
+                            </p>
+                        {% endif %}
+                    </div>
+                {% elif is_enrolled %}
+                    <form method="post" action="{% url 'courses:course_unenroll' course.identifier %}">
+                        {% csrf_token %}
+                        <button class="button button-secondary" type="submit">Salir del curso</button>
+                    </form>
+                {% else %}
+                    <form method="post" action="{% url 'courses:course_enroll' course.identifier %}">
+                        {% csrf_token %}
+                        <button class="button button-primary" type="submit">Inscribirme ahora</button>
+                    </form>
+                {% endif %}
+            {% else %}
+                <a class="button button-primary" href="{% url 'login' %}">Inicia sesión para inscribirte</a>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<section class="card floating-card page-section">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h2 style="margin: 0;">📚 Contenido del curso</h2>
+        {% if can_manage_course %}
+            <a class="button button-primary" href="{% url 'courses:lesson_create' course.identifier %}">
+                ➕ Agregar lección
+            </a>
+        {% endif %}
+    </div>
+    
+    {% if lessons_with_progress %}
+        {% if can_manage_course %}
+            <div style="margin-bottom: 1rem; padding: 0.75rem; background: #fef3c7; border-radius: 8px; color: #92400e;">
+                <strong>💡 Modo instructor:</strong> Arrastra las lecciones para reordenarlas
+            </div>
+        {% endif %}
+        <ul class="lesson-list" id="lesson-list" {% if can_manage_course %}data-draggable="true"{% endif %}>
+            {% for item in lessons_with_progress %}
+                {% with lesson=item.lesson progress=item.progress %}
+                <li class="lesson-item" data-lesson-id="{{ lesson.id }}" data-order="{{ lesson.order }}" {% if can_manage_course %}draggable="true"{% endif %}>
+                    {% if can_manage_course %}
+                        <div class="drag-handle" title="Arrastra para reordenar">☰</div>
+                    {% else %}
+                        <div class="lesson-number">{{ lesson.order }}</div>
+                    {% endif %}
+                    <div class="lesson-info">
+                        <div class="lesson-header">
+                            <strong>{{ lesson.title }}</strong>
+                            <span class="lesson-type-badge lesson-type-{{ lesson.content_type }}">
+                                {% if lesson.content_type == "video" %}🎥
+                                {% elif lesson.content_type == "text" %}📝
+                                {% elif lesson.content_type == "image" %}🖼️
+                                {% elif lesson.content_type == "file" %}📄
+                                {% endif %}
+                                {{ lesson.get_content_type_display }}
+                            </span>
+                        </div>
+                        {% if progress and progress.completed %}
+                            <div class="lesson-progress-indicator completed">
+                                ✅ Completada el {{ progress.completed_at|date:"d/m/Y" }}
+                            </div>
+                        {% elif is_enrolled %}
+                            <div class="lesson-progress-indicator pending">
+                                ⏳ Pendiente
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="lesson-actions">
+                        {% if can_manage_course %}
+                            <a class="button button-secondary button-small" href="{% url 'courses:lesson_update' course.identifier lesson.id %}" title="Editar lección">✏️</a>
+                            <a class="button button-secondary button-small" href="{% url 'courses:lesson_delete' course.identifier lesson.id %}" title="Eliminar lección">🗑️</a>
+                        {% endif %}
+                        {% if progress and progress.completed %}
+                            <form method="post" action="{% url 'courses:lesson_progress' course.identifier lesson.id %}" style="display: inline;">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="uncomplete">
+                                <button class="button button-secondary button-small" type="submit" title="Marcar como pendiente">↩️</button>
+                            </form>
+                        {% elif user.is_authenticated %}
+                            {% if is_enrolled or can_manage_course %}
+                                <form method="post" action="{% url 'courses:lesson_progress' course.identifier lesson.id %}" style="display: inline;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="complete">
+                                    <button class="button button-primary button-small" type="submit" title="Marcar como completada">✅</button>
+                                </form>
+                            {% endif %}
+                        {% endif %}
+                        <a class="button button-primary button-small" href="{% url 'courses:lesson_detail' course.identifier lesson.id %}" title="Ver lección completa">
+                            {% if progress and progress.completed %}👁️ Ver{% else %}▶️ Iniciar{% endif %}
+                        </a>
+                    </div>
+                </li>
+                {% endwith %}
+            {% endfor %}
+        </ul>
+    {% else %}
+        <div class="empty-state">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">📝</div>
+            <h3>Este curso aún no tiene lecciones</h3>
+            <p>Comienza agregando tu primera lección para compartir contenido con tus estudiantes.</p>
+            {% if can_manage_course %}
+                <a class="button button-primary" href="{% url 'courses:lesson_create' course.identifier %}" style="margin-top: 1rem;">
+                    ➕ Agregar primera lección
+                </a>
+            {% endif %}
+        </div>
+    {% endif %}
+</section>
+
+<section class="card floating-card page-section">
+    <h2>Comentarios</h2>
+    <div class="timeline">
+        {% for comment in course.comments.all %}
+            <div class="timeline-item">
+                <div class="comment-card">
+                    <strong>{{ comment.user.get_full_name|default:comment.user.username }}</strong>
+                    <small class="meta">{{ comment.created_at|date:"d/m/Y H:i" }}</small>
+                    <p>{{ comment.content }}</p>
+                </div>
+            </div>
+        {% empty %}
+            <div class="empty-state">Aún no hay comentarios.</div>
+        {% endfor %}
+    </div>
+
+    {% if user.is_authenticated %}
+        {% if is_enrolled or can_manage_course %}
+            <div class="comment-form" style="margin-top:1.5rem;">
+                <h3>Agregar comentario</h3>
+                <form method="post" action="{% url 'courses:comment_create' course.identifier %}">
+                    {% csrf_token %}
+                    {{ comment_form.as_p }}
+                    <button class="button button-primary" type="submit">Publicar</button>
+                </form>
+            </div>
+        {% else %}
+            <p class="meta">Necesitas inscribirte para comentar.</p>
+        {% endif %}
+    {% else %}
+        <p class="meta"><a href="{% url 'login' %}">Inicia sesión</a> para participar en los comentarios.</p>
+    {% endif %}
+</section>
+
+{% if can_manage_course %}
+<script>
+// Drag and Drop para reordenar lecciones
+document.addEventListener('DOMContentLoaded', function() {
+    const lessonList = document.getElementById('lesson-list');
+    if (!lessonList || !lessonList.dataset.draggable) return;
+    
+    let draggedElement = null;
+    
+    const lessonItems = lessonList.querySelectorAll('.lesson-item');
+    lessonItems.forEach((item) => {
+        item.addEventListener('dragstart', function(e) {
+            draggedElement = this;
+            this.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        });
+        
+        item.addEventListener('dragend', function(e) {
+            this.classList.remove('dragging');
+            lessonItems.forEach(item => item.classList.remove('drag-over'));
+            
+            // Guardar nuevo orden
+            if (draggedElement) {
+                const newOrder = [];
+                const updatedItems = lessonList.querySelectorAll('.lesson-item');
+                
+                updatedItems.forEach((item, index) => {
+                    const lessonId = item.dataset.lessonId;
+                    if (lessonId) {
+                        newOrder.push({
+                            id: parseInt(lessonId),
+                            order: index + 1
+                        });
+                    }
+                });
+                
+                // Enviar al servidor
+                fetch("{% url 'courses:lesson_reorder' course.identifier %}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify({
+                        lesson_orders: newOrder
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Mostrar mensaje de éxito
+                        const message = document.createElement('div');
+                        message.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #10b981; color: white; padding: 1rem 1.5rem; border-radius: 8px; z-index: 1000; box-shadow: 0 4px 6px rgba(0,0,0,0.1); font-weight: 500;';
+                        message.textContent = '✅ Lecciones reordenadas';
+                        document.body.appendChild(message);
+                        setTimeout(() => message.remove(), 3000);
+                    } else {
+                        alert('Error al reordenar: ' + (data.error || 'Error desconocido'));
+                        location.reload();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error al guardar el nuevo orden');
+                    location.reload();
+                });
+                
+                draggedElement = null;
+            }
+        });
+        
+        item.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            
+            const dragging = document.querySelector('.dragging');
+            if (!dragging || dragging === this) return;
+            
+            const afterElement = getDragAfterElement(lessonList, e.clientY);
+            
+            if (afterElement == null) {
+                lessonList.appendChild(dragging);
+            } else {
+                lessonList.insertBefore(dragging, afterElement);
+            }
+        });
+        
+        item.addEventListener('dragenter', function(e) {
+            e.preventDefault();
+            if (this !== draggedElement) {
+                this.classList.add('drag-over');
+            }
+        });
+        
+        item.addEventListener('dragleave', function(e) {
+            this.classList.remove('drag-over');
+        });
+        
+        item.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.classList.remove('drag-over');
+        });
+    });
+    
+    function getDragAfterElement(container, y) {
+        const draggableElements = [...container.querySelectorAll('.lesson-item:not(.dragging)')];
+        
+        return draggableElements.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+            
+            if (offset < 0 && offset > closest.offset) {
+                return { offset: offset, element: child };
+            } else {
+                return closest;
+            }
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+});
+</script>
+{% endif %}
+{% endblock %}

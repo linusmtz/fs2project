@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block title %}Catálogo{% endblock %}
+
+{% block content %}
+<section class="hero floating-card">
+    <span class="hero-label">Plataforma oficial</span>
+    <h1>Aprende, comparte y crea cursos memorables</h1>
+    <p>Explora el catálogo, revisa materiales multimedia y monitorea tu avance con estadísticas en tiempo real.</p>
+    <div class="hero-cta">
+        <a class="button button-primary" href="{% url 'courses:course_list' %}">Explorar cursos</a>
+        {% if user.is_authenticated %}
+            <a class="button button-secondary" href="{% url 'courses:course_create' %}">➕ Publicar nuevo curso</a>
+        {% elif not user.is_authenticated %}
+            <a class="button button-secondary" href="{% url 'login' %}">Ingresar</a>
+        {% else %}
+            <a class="button button-secondary" href="{% url 'courses:dashboard' %}">Ir a mi tablero</a>
+        {% endif %}
+    </div>
+    {% if page_obj %}
+        <div class="stat-grid" style="max-width:650px;margin:2rem auto 0;">
+            <div class="stat-card">
+                <span>{{ page_obj.paginator.count }}</span>
+                Cursos disponibles
+            </div>
+            <div class="stat-card">
+                <span>{{ courses|length }}</span>
+                Mostrando en esta página
+            </div>
+            <div class="stat-card">
+                <span>
+                    {% if user.is_authenticated %}
+                        {{ user.enrollments.count }}
+                    {% else %}
+                        0
+                    {% endif %}
+                </span>
+                Cursos a los que perteneces
+            </div>
+        </div>
+    {% endif %}
+</section>
+
+<form method="get" class="search-bar" style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
+    <input 
+        type="text" 
+        name="q" 
+        placeholder="Buscar por título, descripción o instructor..." 
+        value="{{ search }}"
+        style="flex: 1; min-width: 200px;"
+        autocomplete="off">
+    <button class="button button-primary" type="submit">🔍 Buscar</button>
+    {% if search or instructor_filter %}
+        <a href="{% url 'courses:course_list' %}" class="button button-secondary">Limpiar</a>
+    {% endif %}
+</form>
+
+{% if total_courses or total_instructors %}
+<div class="stat-grid" style="margin: 1.5rem 0;">
+    {% if total_courses %}
+    <div class="stat-card">
+        <span>{{ total_courses }}</span>
+        Cursos totales
+    </div>
+    {% endif %}
+    {% if total_instructors %}
+    <div class="stat-card">
+        <span>{{ total_instructors }}</span>
+        Instructores
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+{% if courses %}
+    <div class="course-grid">
+        {% for course in courses %}
+            <article class="course-card floating-card">
+                <div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem;">
+                        <h2>{{ course.title }}</h2>
+                        {% if not course.is_listed %}
+                            <span class="pill" style="background:#fee2e2;color:#b91c1c;">Privado</span>
+                        {% endif %}
+                    </div>
+                    <p>{{ course.description|truncatewords:25 }}</p>
+                </div>
+                <div class="meta">
+                    Instructor: {{ course.instructor.get_full_name|default:course.instructor.username }}<br>
+                    {{ course.lesson_count }} lecciones · {{ course.enrollment_count }} estudiantes
+                </div>
+                {% if user.is_authenticated %}
+                    {% if course.instructor_id == user.id %}
+                        <span class="badge">Eres el instructor</span>
+                    {% elif course.identifier in enrolled_ids %}
+                        <span class="badge">Estás inscrito</span>
+                    {% endif %}
+                {% endif %}
+                <a class="button button-primary" href="{% url 'courses:course_detail' course.identifier %}">
+                    {% if user.is_authenticated and course.identifier in enrolled_ids %}
+                        Continuar curso
+                    {% else %}
+                        Ver detalles
+                    {% endif %}
+                </a>
+            </article>
+        {% endfor %}
+    </div>
+
+    {% if is_paginated %}
+        <div class="pagination" style="margin-top:2rem;display:flex;gap:0.5rem;justify-content:center;">
+            {% if page_obj.has_previous %}
+                <a class="button button-secondary" href="?page={{ page_obj.previous_page_number }}&q={{ search }}">Anterior</a>
+            {% endif %}
+            <span class="badge">Página {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+            {% if page_obj.has_next %}
+                <a class="button button-secondary" href="?page={{ page_obj.next_page_number }}&q={{ search }}">Siguiente</a>
+            {% endif %}
+        </div>
+    {% endif %}
+{% else %}
+    <div class="empty-state">
+        No hay cursos disponibles aún. Vuelve pronto.
+    </div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,159 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy to Server
+    runs-on: self-hosted  # Cambia esto por el label de tu runner si es diferente
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Copy code to deployment directory
+        run: |
+          set -e
+          APP_DIR="/home/ubuntu/fs2Project"
+          mkdir -p "$APP_DIR"
+          
+          echo "📦 Copiando código al directorio de deployment..."
+          # Copiar todo el código desde el workspace del runner al directorio de deployment
+          rsync -av --delete \
+            --exclude='.git' \
+            --exclude='node_modules' \
+            --exclude='__pycache__' \
+            --exclude='*.pyc' \
+            --exclude='.env' \
+            "$GITHUB_WORKSPACE/" "$APP_DIR/"
+          
+          echo "APP_DIR=$APP_DIR" >> $GITHUB_ENV
+          echo "✅ Código copiado exitosamente"
+
+      - name: Create .env file from GitHub Secrets
+        run: |
+          set -e
+          cd "$APP_DIR"
+          
+          echo "📝 Creando archivo .env desde GitHub Secrets..."
+          
+          # Crear el archivo .env con todas las variables de los secrets
+          cat > src/.env << EOF
+          # Django Settings
+          SECRET_KEY=${{ secrets.SECRET_KEY }}
+          DEBUG=${{ secrets.DEBUG || '0' }}
+          ALLOWED_HOSTS=${{ secrets.ALLOWED_HOSTS }}
+          CSRF_TRUSTED_ORIGINS=${{ secrets.CSRF_TRUSTED_ORIGINS }}
+          
+          # Database Configuration
+          DJANGO_USE_SQLITE=${{ secrets.DJANGO_USE_SQLITE || '0' }}
+          POSTGRES_DB=${{ secrets.POSTGRES_DB }}
+          POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_HOST=${{ secrets.POSTGRES_HOST || 'db' }}
+          POSTGRES_PORT=${{ secrets.POSTGRES_PORT || '5432' }}
+          
+          # Cloud Storage (OCI Object Storage)
+          USE_CLOUD_STORAGE=${{ secrets.USE_CLOUD_STORAGE || '1' }}
+          AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_STORAGE_BUCKET_NAME=${{ secrets.AWS_STORAGE_BUCKET_NAME }}
+          AWS_S3_REGION_NAME=${{ secrets.AWS_S3_REGION_NAME }}
+          AWS_S3_ENDPOINT_URL=${{ secrets.AWS_S3_ENDPOINT_URL }}
+          
+          # Optional Settings
+          TIME_ZONE=${{ secrets.TIME_ZONE || 'America/Mexico_City' }}
+          
+          # Email Configuration
+          EMAIL_BACKEND=${{ secrets.EMAIL_BACKEND || 'django.core.mail.backends.console.EmailBackend' }}
+          EMAIL_HOST=${{ secrets.EMAIL_HOST || '' }}
+          EMAIL_PORT=${{ secrets.EMAIL_PORT || '587' }}
+          EMAIL_USE_TLS=${{ secrets.EMAIL_USE_TLS || 'True' }}
+          EMAIL_USE_SSL=${{ secrets.EMAIL_USE_SSL || 'False' }}
+          EMAIL_HOST_USER=${{ secrets.EMAIL_HOST_USER || '' }}
+          EMAIL_HOST_PASSWORD=${{ secrets.EMAIL_HOST_PASSWORD || '' }}
+          DEFAULT_FROM_EMAIL=${{ secrets.DEFAULT_FROM_EMAIL || 'noreply@example.com' }}
+          EMAIL_TIMEOUT=${{ secrets.EMAIL_TIMEOUT || '10' }}
+          EOF
+          
+          # Verificar que las variables críticas estén configuradas
+          echo "🔍 Verificando variables críticas..."
+          
+          REQUIRED_VARS=(
+            "SECRET_KEY"
+            "ALLOWED_HOSTS"
+            "POSTGRES_DB"
+            "POSTGRES_USER"
+            "POSTGRES_PASSWORD"
+            "AWS_ACCESS_KEY_ID"
+            "AWS_SECRET_ACCESS_KEY"
+            "AWS_STORAGE_BUCKET_NAME"
+            "AWS_S3_REGION_NAME"
+            "AWS_S3_ENDPOINT_URL"
+          )
+          
+          MISSING_VARS=()
+          for var in "${REQUIRED_VARS[@]}"; do
+            if ! grep -q "^${var}=" src/.env || grep -q "^${var}=$" src/.env || grep -q "^${var}=\${{" src/.env; then
+              MISSING_VARS+=("$var")
+            fi
+          done
+          
+          if [ ${#MISSING_VARS[@]} -gt 0 ]; then
+            echo "❌ ERROR: Faltan las siguientes variables en GitHub Secrets:"
+            printf '  - %s\n' "${MISSING_VARS[@]}"
+            exit 1
+          fi
+          
+          # Proteger el archivo .env
+          chmod 600 src/.env
+          echo "✅ Archivo .env creado exitosamente y protegido"
+
+      - name: Build and start containers
+        run: |
+          set -e
+          cd "$APP_DIR"
+          
+          echo "🔨 Construyendo contenedores..."
+          docker compose -f docker-compose.prod.yml build --no-cache
+          
+          echo "🚀 Levantando contenedores..."
+          docker compose -f docker-compose.prod.yml up -d
+          
+          echo "⏳ Esperando a que los servicios estén listos..."
+          sleep 15
+
+      - name: Run migrations
+        run: |
+          cd "$APP_DIR"
+          echo "📊 Ejecutando migraciones..."
+          docker compose -f docker-compose.prod.yml exec -T web python manage.py migrate --noinput
+
+      - name: Collect static files
+        run: |
+          cd "$APP_DIR"
+          echo "📦 Recopilando archivos estáticos..."
+          docker compose -f docker-compose.prod.yml exec -T web python manage.py collectstatic --noinput
+
+      - name: Verify containers
+        run: |
+          cd "$APP_DIR"
+          echo "✅ Verificando contenedores..."
+          docker compose -f docker-compose.prod.yml ps
+
+      - name: Clean up old images
+        run: |
+          echo "🧹 Limpiando imágenes antiguas..."
+          docker image prune -f
+
+      - name: Verify deployment
+        run: |
+          sleep 5
+          curl -f http://localhost:8000/ || echo "⚠️ Advertencia: No se pudo verificar el deployment localmente"
+          echo "✅ Deployment completado exitosamente!"
+

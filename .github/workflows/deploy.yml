@@ -36,6 +36,33 @@ jobs:
           echo "✅ Código copiado exitosamente"
 
       - name: Create .env file from GitHub Secrets
+        env:
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          DEBUG: ${{ secrets.DEBUG }}
+          ALLOWED_HOSTS: ${{ secrets.ALLOWED_HOSTS }}
+          CSRF_TRUSTED_ORIGINS: ${{ secrets.CSRF_TRUSTED_ORIGINS }}
+          DJANGO_USE_SQLITE: ${{ secrets.DJANGO_USE_SQLITE }}
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_HOST: ${{ secrets.POSTGRES_HOST }}
+          POSTGRES_PORT: ${{ secrets.POSTGRES_PORT }}
+          USE_CLOUD_STORAGE: ${{ secrets.USE_CLOUD_STORAGE }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_STORAGE_BUCKET_NAME: ${{ secrets.AWS_STORAGE_BUCKET_NAME }}
+          AWS_S3_REGION_NAME: ${{ secrets.AWS_S3_REGION_NAME }}
+          AWS_S3_ENDPOINT_URL: ${{ secrets.AWS_S3_ENDPOINT_URL }}
+          TIME_ZONE: ${{ secrets.TIME_ZONE }}
+          EMAIL_BACKEND: ${{ secrets.EMAIL_BACKEND }}
+          EMAIL_HOST: ${{ secrets.EMAIL_HOST }}
+          EMAIL_PORT: ${{ secrets.EMAIL_PORT }}
+          EMAIL_USE_TLS: ${{ secrets.EMAIL_USE_TLS }}
+          EMAIL_USE_SSL: ${{ secrets.EMAIL_USE_SSL }}
+          EMAIL_HOST_USER: ${{ secrets.EMAIL_HOST_USER }}
+          EMAIL_HOST_PASSWORD: ${{ secrets.EMAIL_HOST_PASSWORD }}
+          DEFAULT_FROM_EMAIL: ${{ secrets.DEFAULT_FROM_EMAIL }}
+          EMAIL_TIMEOUT: ${{ secrets.EMAIL_TIMEOUT }}
         run: |
           set -e
           cd "$APP_DIR"
@@ -43,71 +70,43 @@ jobs:
           echo "📝 Creando archivo .env desde GitHub Secrets..."
           
           # Crear el archivo .env con todas las variables de los secrets
-          cat > src/.env << 'ENVEOF'
+          cat > src/.env << EOF
           # Django Settings
-          SECRET_KEY=$SECRET_KEY_VAR
-          DEBUG=$DEBUG_VAR
-          ALLOWED_HOSTS=$ALLOWED_HOSTS_VAR
-          CSRF_TRUSTED_ORIGINS=$CSRF_TRUSTED_ORIGINS_VAR
+          SECRET_KEY=${SECRET_KEY}
+          DEBUG=${DEBUG:-0}
+          ALLOWED_HOSTS=${ALLOWED_HOSTS}
+          CSRF_TRUSTED_ORIGINS=${CSRF_TRUSTED_ORIGINS}
           
           # Database Configuration
-          DJANGO_USE_SQLITE=$DJANGO_USE_SQLITE_VAR
-          POSTGRES_DB=$POSTGRES_DB_VAR
-          POSTGRES_USER=$POSTGRES_USER_VAR
-          POSTGRES_PASSWORD=$POSTGRES_PASSWORD_VAR
-          POSTGRES_HOST=$POSTGRES_HOST_VAR
-          POSTGRES_PORT=$POSTGRES_PORT_VAR
+          DJANGO_USE_SQLITE=${DJANGO_USE_SQLITE:-0}
+          POSTGRES_DB=${POSTGRES_DB}
+          POSTGRES_USER=${POSTGRES_USER}
+          POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+          POSTGRES_HOST=${POSTGRES_HOST:-db}
+          POSTGRES_PORT=${POSTGRES_PORT:-5432}
           
           # Cloud Storage (OCI Object Storage)
-          USE_CLOUD_STORAGE=$USE_CLOUD_STORAGE_VAR
-          AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID_VAR
-          AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY_VAR
-          AWS_STORAGE_BUCKET_NAME=$AWS_STORAGE_BUCKET_NAME_VAR
-          AWS_S3_REGION_NAME=$AWS_S3_REGION_NAME_VAR
-          AWS_S3_ENDPOINT_URL=$AWS_S3_ENDPOINT_URL_VAR
+          USE_CLOUD_STORAGE=${USE_CLOUD_STORAGE:-1}
+          AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+          AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+          AWS_STORAGE_BUCKET_NAME=${AWS_STORAGE_BUCKET_NAME}
+          AWS_S3_REGION_NAME=${AWS_S3_REGION_NAME}
+          AWS_S3_ENDPOINT_URL=${AWS_S3_ENDPOINT_URL}
           
           # Optional Settings
-          TIME_ZONE=$TIME_ZONE_VAR
+          TIME_ZONE=${TIME_ZONE:-America/Mexico_City}
           
           # Email Configuration
-          EMAIL_BACKEND=$EMAIL_BACKEND_VAR
-          EMAIL_HOST=$EMAIL_HOST_VAR
-          EMAIL_PORT=$EMAIL_PORT_VAR
-          EMAIL_USE_TLS=$EMAIL_USE_TLS_VAR
-          EMAIL_USE_SSL=$EMAIL_USE_SSL_VAR
-          EMAIL_HOST_USER=$EMAIL_HOST_USER_VAR
-          EMAIL_HOST_PASSWORD=$EMAIL_HOST_PASSWORD_VAR
-          DEFAULT_FROM_EMAIL=$DEFAULT_FROM_EMAIL_VAR
-          EMAIL_TIMEOUT=$EMAIL_TIMEOUT_VAR
-          ENVEOF
-          
-          # Reemplazar las variables con los valores reales de los secrets
-          sed -i "s|\$SECRET_KEY_VAR|${{ secrets.SECRET_KEY }}|g" src/.env
-          sed -i "s|\$DEBUG_VAR|${{ secrets.DEBUG || '0' }}|g" src/.env
-          sed -i "s|\$ALLOWED_HOSTS_VAR|${{ secrets.ALLOWED_HOSTS }}|g" src/.env
-          sed -i "s|\$CSRF_TRUSTED_ORIGINS_VAR|${{ secrets.CSRF_TRUSTED_ORIGINS }}|g" src/.env
-          sed -i "s|\$DJANGO_USE_SQLITE_VAR|${{ secrets.DJANGO_USE_SQLITE || '0' }}|g" src/.env
-          sed -i "s|\$POSTGRES_DB_VAR|${{ secrets.POSTGRES_DB }}|g" src/.env
-          sed -i "s|\$POSTGRES_USER_VAR|${{ secrets.POSTGRES_USER }}|g" src/.env
-          sed -i "s|\$POSTGRES_PASSWORD_VAR|${{ secrets.POSTGRES_PASSWORD }}|g" src/.env
-          sed -i "s|\$POSTGRES_HOST_VAR|${{ secrets.POSTGRES_HOST || 'db' }}|g" src/.env
-          sed -i "s|\$POSTGRES_PORT_VAR|${{ secrets.POSTGRES_PORT || '5432' }}|g" src/.env
-          sed -i "s|\$USE_CLOUD_STORAGE_VAR|${{ secrets.USE_CLOUD_STORAGE || '1' }}|g" src/.env
-          sed -i "s|\$AWS_ACCESS_KEY_ID_VAR|${{ secrets.AWS_ACCESS_KEY_ID }}|g" src/.env
-          sed -i "s|\$AWS_SECRET_ACCESS_KEY_VAR|${{ secrets.AWS_SECRET_ACCESS_KEY }}|g" src/.env
-          sed -i "s|\$AWS_STORAGE_BUCKET_NAME_VAR|${{ secrets.AWS_STORAGE_BUCKET_NAME }}|g" src/.env
-          sed -i "s|\$AWS_S3_REGION_NAME_VAR|${{ secrets.AWS_S3_REGION_NAME }}|g" src/.env
-          sed -i "s|\$AWS_S3_ENDPOINT_URL_VAR|${{ secrets.AWS_S3_ENDPOINT_URL }}|g" src/.env
-          sed -i "s|\$TIME_ZONE_VAR|${{ secrets.TIME_ZONE || 'America/Mexico_City' }}|g" src/.env
-          sed -i "s|\$EMAIL_BACKEND_VAR|${{ secrets.EMAIL_BACKEND || 'django.core.mail.backends.console.EmailBackend' }}|g" src/.env
-          sed -i "s|\$EMAIL_HOST_VAR|${{ secrets.EMAIL_HOST || '' }}|g" src/.env
-          sed -i "s|\$EMAIL_PORT_VAR|${{ secrets.EMAIL_PORT || '587' }}|g" src/.env
-          sed -i "s|\$EMAIL_USE_TLS_VAR|${{ secrets.EMAIL_USE_TLS || 'True' }}|g" src/.env
-          sed -i "s|\$EMAIL_USE_SSL_VAR|${{ secrets.EMAIL_USE_SSL || 'False' }}|g" src/.env
-          sed -i "s|\$EMAIL_HOST_USER_VAR|${{ secrets.EMAIL_HOST_USER || '' }}|g" src/.env
-          sed -i "s|\$EMAIL_HOST_PASSWORD_VAR|${{ secrets.EMAIL_HOST_PASSWORD || '' }}|g" src/.env
-          sed -i "s|\$DEFAULT_FROM_EMAIL_VAR|${{ secrets.DEFAULT_FROM_EMAIL || 'noreply@example.com' }}|g" src/.env
-          sed -i "s|\$EMAIL_TIMEOUT_VAR|${{ secrets.EMAIL_TIMEOUT || '10' }}|g" src/.env
+          EMAIL_BACKEND=${EMAIL_BACKEND:-django.core.mail.backends.console.EmailBackend}
+          EMAIL_HOST=${EMAIL_HOST:-}
+          EMAIL_PORT=${EMAIL_PORT:-587}
+          EMAIL_USE_TLS=${EMAIL_USE_TLS:-True}
+          EMAIL_USE_SSL=${EMAIL_USE_SSL:-False}
+          EMAIL_HOST_USER=${EMAIL_HOST_USER:-}
+          EMAIL_HOST_PASSWORD=${EMAIL_HOST_PASSWORD:-}
+          DEFAULT_FROM_EMAIL=${DEFAULT_FROM_EMAIL:-noreply@example.com}
+          EMAIL_TIMEOUT=${EMAIL_TIMEOUT:-10}
+          EOF
           
           # Verificar que las variables críticas estén configuradas
           echo "🔍 Verificando variables críticas..."

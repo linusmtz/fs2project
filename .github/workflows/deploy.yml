@@ -166,6 +166,11 @@ jobs:
           cd "$APP_DIR"
           echo "📦 Recopilando archivos estáticos..."
           docker compose -f docker-compose.prod.yml exec -T web python manage.py collectstatic --noinput
+          
+          echo "🔧 Ajustando permisos de archivos estáticos para Nginx..."
+          sudo chown -R www-data:www-data "$APP_DIR/src/staticfiles/"
+          sudo chmod -R 755 "$APP_DIR/src/staticfiles/"
+          sudo chmod 755 "$APP_DIR/src/" "$APP_DIR/src/staticfiles/"
 
       - name: Verify containers
         run: |

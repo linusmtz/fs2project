@@ -27,7 +27,7 @@ echo "📝 Creando configuración de Nginx..."
 sudo tee "$NGINX_CONFIG" > /dev/null <<EOF
 server {
     listen 80;
-    server_name app.linusmartinez.com;
+    server_name app.linusmartinez.com 129.80.212.133 _;
 
     # Tamaño máximo de archivos subidos
     client_max_body_size 100M;

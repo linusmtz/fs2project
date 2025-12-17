@@ -78,11 +78,13 @@ X_FRAME_OPTIONS = 'DENY'
 SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
 
 # Session Security
+# Configurar cookies seguras solo si se usa HTTPS
+USE_HTTPS = os.environ.get("USE_HTTPS", "0") == "1"
 SESSION_COOKIE_HTTPONLY = True
-SESSION_COOKIE_SECURE = not DEBUG  # Solo en producción con HTTPS
+SESSION_COOKIE_SECURE = USE_HTTPS and not DEBUG  # Solo en producción con HTTPS
 SESSION_COOKIE_SAMESITE = 'Lax'
 CSRF_COOKIE_HTTPONLY = True
-CSRF_COOKIE_SECURE = not DEBUG  # Solo en producción con HTTPS
+CSRF_COOKIE_SECURE = USE_HTTPS and not DEBUG  # Solo en producción con HTTPS
 CSRF_COOKIE_SAMESITE = 'Lax'
 
 ROOT_URLCONF = 'app.urls'

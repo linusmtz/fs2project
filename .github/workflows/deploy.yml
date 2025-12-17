@@ -141,6 +141,27 @@ jobs:
             exit 1
           fi
           
+          # Asegurar que la IP pública esté en ALLOWED_HOSTS
+          echo "🔧 Verificando ALLOWED_HOSTS..."
+          if ! grep -q "129.80.212.133" src/.env || ! grep -q "^ALLOWED_HOSTS=.*129.80.212.133" src/.env; then
+            echo "➕ Agregando IP pública a ALLOWED_HOSTS..."
+            sed -i 's/^ALLOWED_HOSTS=\(.*\)$/ALLOWED_HOSTS=\1,129.80.212.133/' src/.env
+            # Si no existía ALLOWED_HOSTS, agregarlo
+            if ! grep -q "^ALLOWED_HOSTS=" src/.env; then
+              sed -i '/^# Django Settings/a ALLOWED_HOSTS=app.linusmartinez.com,localhost,127.0.0.1,129.80.212.133' src/.env
+            fi
+          fi
+          
+          # Asegurar que la IP esté en CSRF_TRUSTED_ORIGINS
+          if ! grep -q "http://129.80.212.133" src/.env || ! grep -q "^CSRF_TRUSTED_ORIGINS=.*http://129.80.212.133" src/.env; then
+            echo "➕ Agregando IP pública a CSRF_TRUSTED_ORIGINS..."
+            if grep -q "^CSRF_TRUSTED_ORIGINS=" src/.env; then
+              sed -i 's|^CSRF_TRUSTED_ORIGINS=\(.*\)$|CSRF_TRUSTED_ORIGINS=\1,http://129.80.212.133|' src/.env
+            else
+              sed -i '/^ALLOWED_HOSTS=/a CSRF_TRUSTED_ORIGINS=http://app.linusmartinez.com,http://129.80.212.133' src/.env
+            fi
+          fi
+          
           # Proteger el archivo .env
           chmod 600 src/.env
           echo "✅ Archivo .env creado exitosamente y protegido"

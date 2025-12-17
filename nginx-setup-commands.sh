@@ -1,0 +1,23 @@
+#!/bin/bash
+# Comandos para configurar Nginx en la VM
+
+echo "🔍 Verificando configuración actual de Nginx..."
+echo ""
+echo "1. Ver sitios disponibles:"
+echo "   ls -la /etc/nginx/sites-available/"
+echo ""
+echo "2. Ver sitios habilitados:"
+echo "   ls -la /etc/nginx/sites-enabled/"
+echo ""
+echo "3. Ver contenido de la configuración actual:"
+echo "   cat /etc/nginx/sites-enabled/default"
+echo ""
+echo "4. Probar que Django responde:"
+echo "   curl http://127.0.0.1:8000/"
+echo ""
+echo "5. Configurar Nginx (ejecutar en la VM):"
+echo "   sudo cp /home/ubuntu/fs2Project/nginx/app.linusmartinez.com.conf /etc/nginx/sites-available/app.linusmartinez.com"
+echo "   sudo ln -sf /etc/nginx/sites-available/app.linusmartinez.com /etc/nginx/sites-enabled/app.linusmartinez.com"
+echo "   sudo rm -f /etc/nginx/sites-enabled/default"
+echo "   sudo nginx -t"
+echo "   sudo systemctl reload nginx"
